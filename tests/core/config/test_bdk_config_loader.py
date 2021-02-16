@@ -42,8 +42,8 @@ def test_load_from_file_not_found(wrong_path):
         config = BdkConfigLoader.load_from_file(wrong_path)
 
 
-@pytest.mark.skipif(os.environ.get("CIRCLECI") == "true",
-                    reason="CircleCI does not allow to create file in the home directory")
+@pytest.mark.skipif(os.environ.get("CIRCLECI") == "true" or os.environ.get("CI") == "true",
+                    reason="CircleCI / GH actions does not allow to create file in the home directory")
 def test_load_from_symphony_directory(simple_config_path):
     tmp_config_filename = str(uuid.uuid4()) + "-config.yaml"
     tmp_config_path = Path.home() / ".symphony" / tmp_config_filename
