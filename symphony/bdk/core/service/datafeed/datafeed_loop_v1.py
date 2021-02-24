@@ -1,6 +1,5 @@
 from symphony.bdk.core.service.datafeed.abstract_datafeed_loop import AbstractDatafeedLoop
 from symphony.bdk.core.service.datafeed.on_disk_datafeed_id_repository import OnDiskDatafeedIdRepository
-from symphony.bdk.gen.exceptions import ApiException
 
 
 class DatafeedLoopV1(AbstractDatafeedLoop):
@@ -28,26 +27,16 @@ class DatafeedLoopV1(AbstractDatafeedLoop):
         super().__init__(datafeed_api, auth_session, config)
         self.datafeed_repository = OnDiskDatafeedIdRepository(config) if repository is None else repository
         self.datafeed_id = None
-        self.started = False
 
-    async def start(self):
+    async def pre_start(self):
         self.datafeed_id = self.datafeed_repository.read()
         if not self.datafeed_id:
             self.datafeed_id = await self._create_datafeed_and_persist()
-        self.started = True
-        while self.started:
-            try:
-                await self._read_datafeed()
-            except ApiException as e:
-                if e.status == 400:
-                    self.datafeed_id = await self._create_datafeed_and_persist()
-                else:
-                    raise e
 
-    async def stop(self):
-        self.started = False
+    async def recreate_datafeed(self):
+        self.datafeed_id = await self._create_datafeed_and_persist()
 
-    async def _read_datafeed(self):
+    async def read_datafeed(self):
         session_token = await self.auth_session.session_token
         key_manager_token = await self.auth_session.key_manager_token
         events = await self.datafeed_api.v4_datafeed_id_read_get(id=self.datafeed_id,

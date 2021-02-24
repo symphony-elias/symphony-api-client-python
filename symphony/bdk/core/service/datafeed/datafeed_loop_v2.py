@@ -3,7 +3,6 @@ from typing import Optional
 from symphony.bdk.core.auth.auth_session import AuthSession
 from symphony.bdk.core.config.model.bdk_config import BdkConfig
 from symphony.bdk.core.service.datafeed.abstract_datafeed_loop import AbstractDatafeedLoop
-from symphony.bdk.gen import ApiException
 from symphony.bdk.gen.agent_api.datafeed_api import DatafeedApi
 from symphony.bdk.gen.agent_model.ack_id import AckId
 from symphony.bdk.gen.agent_model.v5_datafeed import V5Datafeed
@@ -31,27 +30,17 @@ class DatafeedLoopV2(AbstractDatafeedLoop):
     def __init__(self, datafeed_api: DatafeedApi, auth_session: AuthSession, config: BdkConfig):
         super().__init__(datafeed_api, auth_session, config)
         self._ack_id = ""
-        self._started = False
         self._datafeed_id = None
 
-    async def start(self):
+    async def pre_start(self):
         datafeed = await self._retrieve_datafeed()
         if not datafeed:
             datafeed = await self._create_datafeed()
         self._datafeed_id = datafeed.id
-        self._started = True
-        while self._started:
-            try:
-                await self._read_datafeed()
-            except ApiException as e:
-                if e.status == 400:
-                    datafeed = await self._recreate_datafeed()
-                    self._datafeed_id = datafeed.id
-                else:
-                    raise e
 
-    async def stop(self):
-        self._started = False
+    async def recreate_datafeed(self):
+        datafeed = await self._recreate_datafeed()
+        self._datafeed_id = datafeed.id
 
     async def _retrieve_datafeed(self) -> Optional[V5Datafeed]:
         session_token = await self.auth_session.session_token
@@ -67,7 +56,7 @@ class DatafeedLoopV2(AbstractDatafeedLoop):
         key_manager_token = await self.auth_session.key_manager_token
         return await self.datafeed_api.create_datafeed(session_token=session_token, key_manager_token=key_manager_token)
 
-    async def _read_datafeed(self):
+    async def read_datafeed(self):
         params = {
             'session_token': await self.auth_session.session_token,
             'key_manager_token': await self.auth_session.key_manager_token,

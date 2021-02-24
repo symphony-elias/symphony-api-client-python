@@ -1,6 +1,5 @@
 """This module gathers all base classes related to the datafeed loop and real time events.
 """
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -9,6 +8,7 @@ from typing import List
 from symphony.bdk.core.auth.auth_session import AuthSession
 from symphony.bdk.core.config.model.bdk_config import BdkConfig
 from symphony.bdk.core.service.datafeed.real_time_event_listener import RealTimeEventListener
+from symphony.bdk.gen import ApiException
 from symphony.bdk.gen.agent_api.datafeed_api import DatafeedApi
 from symphony.bdk.gen.agent_model.v4_event import V4Event
 
@@ -67,14 +67,36 @@ class AbstractDatafeedLoop(ABC):
         self.auth_session = auth_session
         self.bdk_config = config
         self.api_client = datafeed_api.api_client
+        self.running = False
 
-    @abstractmethod
     async def start(self):
         """Start the datafeed event service"""
+        await self.pre_start()
+        self.running = True
+        while self.running:
+            try:
+                await self.read_datafeed()
+            except ApiException as e:
+                if e.status == 400:
+                    await self.recreate_datafeed()
+                else:
+                    raise e
 
     @abstractmethod
+    async def pre_start(self):
+        pass
+
+    @abstractmethod
+    async def read_datafeed(self):
+        pass
+
+    @abstractmethod
+    async def recreate_datafeed(self):
+        pass
+
     async def stop(self):
         """Stop the datafeed event service"""
+        self.running = False
 
     def subscribe(self, listener: RealTimeEventListener):
         """Subscribes a new listener to the datafeed loop instance.
@@ -99,8 +121,7 @@ class AbstractDatafeedLoop(ABC):
         for event in filter(lambda e: e is not None, events):
             for listener in self.listeners:
                 if await listener.is_accepting_event(event, self.bdk_config.bot.username):
-                    asyncio.run_coroutine_threadsafe(self._dispatch_on_event_type(listener, event),
-                                                     asyncio.get_running_loop())
+                    await self._dispatch_on_event_type(listener, event)
 
     async def _dispatch_on_event_type(self, listener: RealTimeEventListener, event: V4Event):
         try:
