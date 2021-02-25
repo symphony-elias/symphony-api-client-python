@@ -36,9 +36,9 @@ class RealTimeEventListenerImpl(RealTimeEventListener):
 
     async def on_message_sent(self, initiator: V4Initiator, event: V4MessageSent):
         # We do not recommend logging full events in production as it could expose sensitive data
-        logging.debug("Received event in listener %s: %s", self._name, event.message.message)
+        logging.info("Received event in listener: %s", event.message.message)
         await asyncio.sleep(10)
-        logging.debug("After sleeping in listener %s: %s", self._name, event.message.message)
+        logging.info("After sleeping in listener:%s", event.message.message)
 
 
 logging.config.fileConfig(os.path.dirname(os.path.abspath(__file__)) + '/logging.conf',
