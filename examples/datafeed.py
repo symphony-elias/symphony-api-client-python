@@ -16,7 +16,8 @@ async def run():
 
     async with SymphonyBdk(config) as bdk:
         datafeed_loop = bdk.datafeed()
-        datafeed_loop.subscribe(RealTimeEventListenerImpl())
+        datafeed_loop.subscribe(RealTimeEventListenerImpl("LISTENER A"))
+        datafeed_loop.subscribe(RealTimeEventListenerImpl("LISTENER B"))
         await datafeed_loop.start()
 
 
@@ -34,11 +35,14 @@ async def shutdown(sig, lp):
 
 class RealTimeEventListenerImpl(RealTimeEventListener):
 
+    def __init__(self, name):
+        self._name = name
+
     async def on_message_sent(self, initiator: V4Initiator, event: V4MessageSent):
         # We do not recommend logging full events in production as it could expose sensitive data
-        logging.debug("Received event: %s", event)
+        logging.debug("Received event in listener %s: %s", self._name, event.message.message)
         await asyncio.sleep(10)
-        logging.debug("After sleeping")
+        logging.debug("After sleeping in listener %s: %s", self._name, event.message.message)
 
 
 logging.config.fileConfig(os.path.dirname(os.path.abspath(__file__)) + '/logging.conf',

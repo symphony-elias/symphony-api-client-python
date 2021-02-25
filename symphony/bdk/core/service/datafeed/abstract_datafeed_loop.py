@@ -68,11 +68,18 @@ class AbstractDatafeedLoop(ABC):
         self.bdk_config = config
         self.api_client = datafeed_api.api_client
         self.running = False
+        self.listeners_queues = {}
 
     async def start(self):
         """Start the datafeed event service"""
-        await self.pre_start()
         self.running = True
+
+        consumers = [asyncio.create_task(self._handle_event(l, q)) for (l, q) in self.listeners_queues.items()]
+        await asyncio.gather(self._start(), *consumers)
+
+    async def _start(self):
+        """Start the datafeed event service"""
+        await self.pre_start()
         while self.running:
             try:
                 await self.read_datafeed()
@@ -104,6 +111,7 @@ class AbstractDatafeedLoop(ABC):
         :param listener: the RealTimeEventListener to be added.
         """
         self.listeners.append(listener)
+        self.listeners_queues[listener] = asyncio.Queue()
 
     def unsubscribe(self, listener: RealTimeEventListener):
         """Removes a given listener from the datafeed loop instance.
@@ -111,6 +119,7 @@ class AbstractDatafeedLoop(ABC):
         :param listener: the RealTimeEventListener to be removed.
         """
         self.listeners.remove(listener)
+        self.listeners_queues.pop(listener)
 
     async def handle_v4_event_list(self, events: List[V4Event]):
         """Handles the event list received from the read datafeed endpoint.
@@ -121,8 +130,13 @@ class AbstractDatafeedLoop(ABC):
         for event in filter(lambda e: e is not None, events):
             for listener in self.listeners:
                 if await listener.is_accepting_event(event, self.bdk_config.bot.username):
-                    asyncio.run_coroutine_threadsafe(self._dispatch_on_event_type(listener, event),
-                                                     asyncio.get_running_loop())
+                    queue = self.listeners_queues[listener]
+                    await queue.put(event)
+
+    async def _handle_event(self, listener, queue):
+        while self.running:
+            event = await queue.get()
+            await self._dispatch_on_event_type(listener, event)
 
     async def _dispatch_on_event_type(self, listener: RealTimeEventListener, event: V4Event):
         try:
