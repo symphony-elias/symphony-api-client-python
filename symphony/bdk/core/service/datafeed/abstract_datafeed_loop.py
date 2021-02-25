@@ -121,8 +121,9 @@ class AbstractDatafeedLoop(ABC):
         for event in filter(lambda e: e is not None, events):
             for listener in self.listeners:
                 if await listener.is_accepting_event(event, self.bdk_config.bot.username):
-                    asyncio.run_coroutine_threadsafe(self._dispatch_on_event_type(listener, event),
-                                                     asyncio.get_running_loop())
+                    asyncio.create_task(self._dispatch_on_event_type(listener, event))
+                    # asyncio.run_coroutine_threadsafe(self._dispatch_on_event_type(listener, event),
+                    #                                  asyncio.get_running_loop())
 
     async def _dispatch_on_event_type(self, listener: RealTimeEventListener, event: V4Event):
         try:
