@@ -75,6 +75,7 @@ class AbstractDatafeedLoop(ABC):
         self.running = True
         while self.running:
             try:
+                logger.debug("Reading DF")
                 await self.read_datafeed()
             except ApiException as e:
                 if e.status == 400:
@@ -120,6 +121,7 @@ class AbstractDatafeedLoop(ABC):
         """
         for event in filter(lambda e: e is not None, events):
             for listener in self.listeners:
+                logger.debug("Received event with ID %s", event.id)
                 if await listener.is_accepting_event(event, self.bdk_config.bot.username):
                     asyncio.create_task(self._dispatch_on_event_type(listener, event))
                     # asyncio.run_coroutine_threadsafe(self._dispatch_on_event_type(listener, event),
