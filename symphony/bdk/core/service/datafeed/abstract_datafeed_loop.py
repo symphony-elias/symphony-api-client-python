@@ -120,12 +120,12 @@ class AbstractDatafeedLoop(ABC):
         :param events: the list of the received datafeed events.
         """
         for event in filter(lambda e: e is not None, events):
+            logger.debug("Received event with ID %s", event.id)
+            tasks = []
             for listener in self.listeners:
-                logger.debug("Received event with ID %s", event.id)
                 if await listener.is_accepting_event(event, self.bdk_config.bot.username):
-                    asyncio.create_task(self._dispatch_on_event_type(listener, event))
-                    # asyncio.run_coroutine_threadsafe(self._dispatch_on_event_type(listener, event),
-                    #                                  asyncio.get_running_loop())
+                    tasks.append(self._dispatch_on_event_type(listener, event))
+            await asyncio.gather(*tasks)
 
     async def _dispatch_on_event_type(self, listener: RealTimeEventListener, event: V4Event):
         try:
