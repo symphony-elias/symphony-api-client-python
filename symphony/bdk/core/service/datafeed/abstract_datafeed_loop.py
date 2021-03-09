@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from contextvars import ContextVar
 from enum import Enum
 from typing import List
 
@@ -14,6 +15,8 @@ from symphony.bdk.gen.agent_api.datafeed_api import DatafeedApi
 from symphony.bdk.gen.agent_model.v4_event import V4Event
 
 logger = logging.getLogger(__name__)
+
+task_context = ContextVar("task_context")
 
 
 class DatafeedVersion(Enum):
@@ -121,13 +124,12 @@ class AbstractDatafeedLoop(ABC):
         """
         for event in filter(lambda e: e is not None, events):
             for listener in self.listeners:
-                logger.debug("Received event with ID %s", event.id)
                 if await listener.is_accepting_event(event, self.bdk_config.bot.username):
                     asyncio.create_task(self._dispatch_on_event_type(listener, event))
-                    # asyncio.run_coroutine_threadsafe(self._dispatch_on_event_type(listener, event),
-                    #                                  asyncio.get_running_loop())
 
     async def _dispatch_on_event_type(self, listener: RealTimeEventListener, event: V4Event):
+        task_context.set(f"{asyncio.current_task().get_name()}/{event.id}/{id(listener)}")
+
         try:
             listener_method_name, payload_field_name = RealTimeEvent[event.type].value
         except KeyError:
