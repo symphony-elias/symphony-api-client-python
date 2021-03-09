@@ -19,6 +19,25 @@ logger = logging.getLogger(__name__)
 task_context = ContextVar("task_context")
 
 
+def setup_log_record_factory():
+    '''
+    Wrap logging request factory so that [{request_id}] is prepended to each message
+    '''
+    old_factory = logging.getLogRecordFactory()
+
+    def new_factory(*args, **kwargs):
+        record = old_factory(*args, **kwargs)
+        req_id = task_context.get(None)
+        if req_id:
+            record.msg = f'[{req_id}] {record.msg}'
+        return record
+
+    logging.setLogRecordFactory(new_factory)
+
+
+setup_log_record_factory()
+
+
 class DatafeedVersion(Enum):
     V1 = "v1"
     V2 = "v2"

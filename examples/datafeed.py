@@ -5,27 +5,10 @@ import os
 import signal
 
 from symphony.bdk.core.config.loader import BdkConfigLoader
-from symphony.bdk.core.service.datafeed.abstract_datafeed_loop import task_context
 from symphony.bdk.core.service.datafeed.real_time_event_listener import RealTimeEventListener
 from symphony.bdk.core.symphony_bdk import SymphonyBdk
 from symphony.bdk.gen.agent_model.v4_initiator import V4Initiator
 from symphony.bdk.gen.agent_model.v4_message_sent import V4MessageSent
-
-
-def setup_log_record_factory():
-    '''
-    Wrap logging request factory so that [{request_id}] is prepended to each message
-    '''
-    old_factory = logging.getLogRecordFactory()
-
-    def new_factory(*args, **kwargs):
-        record = old_factory(*args, **kwargs)
-        req_id = task_context.get(None)
-        if req_id:
-            record.msg = f'[{req_id}] {record.msg}'
-        return record
-
-    logging.setLogRecordFactory(new_factory)
 
 
 async def run():
@@ -64,8 +47,6 @@ class RealTimeEventListenerImpl(RealTimeEventListener):
 
 logging.config.fileConfig(os.path.dirname(os.path.abspath(__file__)) + '/logging.conf',
                           disable_existing_loggers=False)
-
-setup_log_record_factory()
 
 loop = asyncio.get_event_loop()
 signals = (signal.SIGHUP, signal.SIGTERM, signal.SIGINT)
