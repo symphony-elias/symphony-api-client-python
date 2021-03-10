@@ -8,11 +8,14 @@ from symphony.bdk.core.auth.authenticator_factory import AuthenticatorFactory
 from symphony.bdk.core.auth.exception import AuthInitializationError
 from symphony.bdk.core.client.api_client_factory import ApiClientFactory
 from symphony.bdk.core.config.exception import BotNotConfiguredError
+from symphony.bdk.core.service.application.application_service import ApplicationService
 from symphony.bdk.core.service.connection.connection_service import ConnectionService
 from symphony.bdk.core.service.datafeed.abstract_datafeed_loop import AbstractDatafeedLoop
 from symphony.bdk.core.service.health.health_service import HealthService
 from symphony.bdk.core.service.message.message_service import MessageService
 from symphony.bdk.core.service.obo_services import OboServices
+from symphony.bdk.core.service.presence.presence_service import PresenceService
+from symphony.bdk.core.service.signal.signal_service import SignalService
 from symphony.bdk.core.service.stream.stream_service import StreamService
 from symphony.bdk.core.service.user.user_service import UserService
 from symphony.bdk.core.service_factory import ServiceFactory
@@ -61,8 +64,11 @@ class SymphonyBdk:
         self._message_service = None
         self._connection_service = None
         self._stream_service = None
+        self._application_service = None
+        self._signal_service = None
         self._datafeed_loop = None
         self._health_service = None
+        self._presence_service = None
 
         if self._config.bot.is_rsa_configuration_valid():
             self._initialize_bot_services()
@@ -77,8 +83,11 @@ class SymphonyBdk:
         self._message_service = self._service_factory.get_message_service()
         self._connection_service = self._service_factory.get_connection_service()
         self._stream_service = self._service_factory.get_stream_service()
+        self._application_service = self._service_factory.get_application_service()
+        self._signal_service = self._service_factory.get_signal_service()
         self._datafeed_loop = self._service_factory.get_datafeed_loop()
         self._health_service = self._service_factory.get_health_service()
+        self._presence_service = self._service_factory.get_presence_service()
 
     @bot_service
     def bot_session(self) -> AuthSession:
@@ -155,6 +164,23 @@ class SymphonyBdk:
         return self._connection_service
 
     @bot_service
+    def applications(self) -> ApplicationService:
+        """Get the ApplicationService from the BDK entry point.
+
+        :return: The ApplicationService instance.
+
+        """
+        return self._application_service
+
+    @bot_service
+    def signals(self) -> SignalService:
+        """Get the SignalService from the BDK entry point.
+
+        :return: The SignalService instance.
+        """
+        return self._signal_service
+
+    @bot_service
     def health(self) -> HealthService:
         """Get the HealthService from the BDK entry point.
 
@@ -162,6 +188,15 @@ class SymphonyBdk:
 
         """
         return self._health_service
+
+    @bot_service
+    def presence(self) -> PresenceService:
+        """Get the PresenceService from the BDK entry point.
+
+        :return: The PresenceService instance.
+
+        """
+        return self._presence_service
 
     async def close_clients(self):
         """Close all the existing api clients created by the api client factory.
