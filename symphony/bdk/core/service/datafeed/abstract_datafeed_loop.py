@@ -27,9 +27,7 @@ def setup_log_record_factory():
 
     def new_factory(*args, **kwargs):
         record = old_factory(*args, **kwargs)
-        req_id = task_context.get(None)
-        if req_id:
-            record.msg = f'[{req_id}] {record.msg}'
+        record.tsk = task_context.get("no-task")
         return record
 
     logging.setLogRecordFactory(new_factory)
