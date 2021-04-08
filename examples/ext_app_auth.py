@@ -7,7 +7,7 @@ from symphony.bdk.core.symphony_bdk import SymphonyBdk
 
 
 async def run():
-    config = BdkConfigLoader.load_from_symphony_dir("config_obo_py.yaml")
+    config = BdkConfigLoader.load_from_symphony_dir("config.yaml")
     async with SymphonyBdk(config) as bdk:
         ext_app_authenticator = bdk.app_authenticator()
 
