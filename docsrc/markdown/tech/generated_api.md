@@ -9,20 +9,11 @@ from [swagger specifications](https://github.com/symphonyoss/symphony-api-spec) 
 * [login/login-api-public.yaml](https://github.com/symphonyoss/symphony-api-spec/blob/master/login/login-api-public.yaml)
 * [pod/pod-api-public-deprecated.yaml](https://github.com/symphonyoss/symphony-api-spec/blob/master/pod/pod-api-public-deprecated.yaml)
 
-In order to re-generate model files:
-* download the four yaml files mentioned above from [symphony-api-spec repo](https://github.com/symphonyoss/symphony-api-spec)
-* for each file: 
-  run
-  ```shell
-  java -jar project-root/templates/open-api-generator-cli.jar generate -g python -i path/to/spec.yaml --package-name symphony.bdk.gen -o output
-  cd output/symphony/bdk/gen/model
-  sed -i ".bak" "s/symphony\.bdk\.gen\.model\./symphony\.bdk\.gen\.${model_package}\./g" *.py
-  sed -i ".bak" "s/model /${model_package} /g" *.py
-  cp *.py project-root/symphony/bdk/gen/${model_package}
-  # where ${model_package} is "agent_model", "auth_model", "login_model" or "pod_model" depending on the swagger spec file
-  ```
+In order to re-generate model and api files, run
+```shell
+cd project_root/templates
+./generate_client_api.sh
+```
 
-Same goes for the api python modules: run `sed` and `cp` from and to the relevant folders. 
-
-The open-api-generator-cli.jar file was created from sources [here](https://github.com/symphony-elias/openapi-generator/tree/PLAT-10652)
-to accommodate for type hinting.
+The file templates/open-api-generator-cli.jar used to generated model and api files was created from sources
+[here](https://github.com/symphony-elias/openapi-generator/tree/PLAT-10652) to accommodate for type hinting.
