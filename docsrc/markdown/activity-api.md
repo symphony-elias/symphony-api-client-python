@@ -161,4 +161,3 @@ class DummyActivityExample(CommandActivity):
     def before_matcher(self, context: CommandContext):
         context.some_attribute = some_call_to_another_service()
 ```
----
