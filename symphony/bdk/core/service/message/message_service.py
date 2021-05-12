@@ -1,5 +1,6 @@
 from symphony.bdk.core.auth.auth_session import AuthSession
 from symphony.bdk.core.config.model.bdk_retry_config import BdkRetryConfig
+from symphony.bdk.core.service.message.model import Message
 from symphony.bdk.core.service.message.multi_attachments_messages_api import MultiAttachmentsMessagesApi
 from symphony.bdk.gen.agent_api.attachments_api import AttachmentsApi
 from symphony.bdk.gen.agent_model.v4_import_response import V4ImportResponse
@@ -33,6 +34,38 @@ class OboMessageService:
         self._message_suppression_api = message_suppression_api
         self._auth_session = auth_session
         self._retry_config = retry_config
+
+    async def send_simple_message(
+            self,
+            stream_id: str,
+            message: str
+    ) -> V4Message:
+        """Send a message to an existing stream.
+        See: `Create Message <https://developers.symphony.com/restapi/reference#create-message-v4>`_
+
+        :param stream_id: The ID of the stream to send the message to.
+        :param message: The MessageML content to be sent. If <messageML> tags are not put,
+          they will be added before sending the message.
+
+        :return: a V4Message object containing the details of the sent message.
+        """
+        return await self.send_complex_message(stream_id, Message(content=message))
+
+    async def send_complex_message(
+            self,
+            stream_id: str,
+            message: Message
+    ) -> V4Message:
+        """Send a message to an existing stream.
+        See: `Create Message <https://developers.symphony.com/restapi/reference#create-message-v4>`_
+
+        :param stream_id: The ID of the stream to send the message to.
+        :param message: the message to be sent
+
+        :return: a V4Message object containing the details of the sent message.
+        """
+        return await self.send_message(stream_id, message.content, message.data, message.version, message.attachments,
+                                       message.previews)
 
     @retry
     async def send_message(
@@ -144,6 +177,40 @@ class MessageService(OboMessageService):
         }
         message_list = await self._messages_api.v4_stream_sid_message_get(**params)
         return message_list.value
+
+    @retry
+    async def blast_simple_message(
+            self,
+            stream_ids: [str],
+            message: str
+    ) -> V4MessageBlastResponse:
+        """Send a message to multiple existing streams.
+        See: `Blast Message <https://developers.symphony.com/restapi/reference#blast-message>`_
+
+        :param stream_ids: The list of stream IDs to send the message to
+        :param message: The MessageML content to be sent. If <messageML> tags are not put,
+          they will be added before sending the message.
+
+        :return: a V4MessageBlastResponse object containing the details of the sent messages
+        """
+        return await self.blast_complex_message(stream_ids, Message(content=message))
+
+    @retry
+    async def blast_complex_message(
+            self,
+            stream_ids: [str],
+            message: Message
+    ) -> V4MessageBlastResponse:
+        """Send a message to multiple existing streams.
+        See: `Blast Message <https://developers.symphony.com/restapi/reference#blast-message>`_
+
+        :param stream_ids: The list of stream IDs to send the message to
+        :param message: The message to be sent
+
+        :return: a V4MessageBlastResponse object containing the details of the sent messages
+        """
+        return await self.blast_message(stream_ids, message.content, message.data, message.version, message.attachments,
+                                        message.previews)
 
     @retry
     async def blast_message(
