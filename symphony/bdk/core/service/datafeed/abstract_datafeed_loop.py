@@ -189,6 +189,8 @@ class AbstractDatafeedLoop(ABC):
         self._tasks.append(current_task)
         try:
             await self._run_listener_method(listener, event)
+        except Exception as exc:
+            logger.debug("Exception raised inside listener", exc_info=exc)
         finally:
             self._tasks.remove(current_task)
 
