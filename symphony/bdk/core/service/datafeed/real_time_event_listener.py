@@ -1,4 +1,3 @@
-from symphony.bdk.gen import ApiAttributeError
 from symphony.bdk.gen.agent_model.v4_event import V4Event
 from symphony.bdk.gen.agent_model.v4_message_sent import V4MessageSent
 from symphony.bdk.gen.agent_model.v4_initiator import V4Initiator
@@ -38,7 +37,7 @@ class RealTimeEventListener:
         """
         try:
             return event.initiator.user.username != username
-        except ApiAttributeError:
+        except AttributeError:
             return False
 
     async def on_message_sent(self, initiator: V4Initiator, event: V4MessageSent):
