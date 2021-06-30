@@ -1139,7 +1139,6 @@ class StreamsApi(object):
         def __v2_streams_sid_info_get(
             self,
             sid,
-            session_token,
             **kwargs
         ):
             """Get information about a partcular stream.  # noqa: E501
@@ -1147,14 +1146,15 @@ class StreamsApi(object):
             This method makes a synchronous HTTP request by default. To make an
             asynchronous HTTP request, please pass async_req=True
 
-            >>> thread = pod_api.v2_streams_sid_info_get(sid, session_token, async_req=True)
+            >>> thread = pod_api.v2_streams_sid_info_get(sid, async_req=True)
             >>> result = thread.get()
 
             Args:
                 sid (str): Stream Id
-                session_token (str): Session authentication token.
 
             Keyword Args:
+                session_token (str): Session authentication token.. [optional]
+                authorization (str): Session authentication token.. [optional]
                 _return_http_data_only (bool): response data without head status
                     code and headers. Default is True.
                 _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1201,8 +1201,6 @@ class StreamsApi(object):
             kwargs['_host_index'] = kwargs.get('_host_index')
             kwargs['sid'] = \
                 sid
-            kwargs['session_token'] = \
-                session_token
             return self.call_with_http_info(**kwargs)
 
         self.v2_streams_sid_info_get = _Endpoint(
@@ -1218,10 +1216,10 @@ class StreamsApi(object):
                 'all': [
                     'sid',
                     'session_token',
+                    'authorization',
                 ],
                 'required': [
                     'sid',
-                    'session_token',
                 ],
                 'nullable': [
                 ],
@@ -1240,14 +1238,18 @@ class StreamsApi(object):
                         (str,),
                     'session_token':
                         (str,),
+                    'authorization':
+                        (str,),
                 },
                 'attribute_map': {
                     'sid': 'sid',
                     'session_token': 'sessionToken',
+                    'authorization': 'authorization',
                 },
                 'location_map': {
                     'sid': 'path',
                     'session_token': 'header',
+                    'authorization': 'header',
                 },
                 'collection_format_map': {
                 }
